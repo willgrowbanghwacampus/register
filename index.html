@@ -124,13 +124,13 @@
   <form id="f">
     <label>학생 이름 *<input name="name" required /></label>
     <label>생년월일 *<input type="date" name="birth_date" required /></label>
-    <label>학교<input name="school" placeholder="예: 방화초등학교" /></label>
+    <label>학교 *<input name="school" placeholder="예: 방화초등학교" required /></label>
     <label>학년 *<select name="grade" required><option value="">선택하세요</option></select></label>
     <label>학생 본인 연락처 (선택)<input name="phone" placeholder="010-0000-0000" /></label>
     <label>보호자 연락처 *<input name="guardian_phone" placeholder="010-0000-0000" required /></label>
-    <label>주소<input name="address" /></label>
-    <label>유입 경로 (어떻게 알게 되셨나요?)
-      <select name="referral_source">
+    <label>주소 *<input name="address" required /></label>
+    <label>유입 경로 (어떻게 알게 되셨나요?) *
+      <select name="referral_source" required>
         <option value="">선택하세요</option>
         <option>지인 추천</option>
         <option>블로그·카페</option>
@@ -148,8 +148,8 @@
       </div>
     </fieldset>
     <div id="shuttleFields" class="hidden" style="display:flex;flex-direction:column;gap:16px;">
-      <label>탑승 장소 *<input name="shuttle_pickup" placeholder="예: ○○아파트 정문" /></label>
-      <label>하원 장소 *<input name="shuttle_dropoff" placeholder="예: ○○아파트 정문" /></label>
+      <label>탑승 장소 (선택)<input name="shuttle_pickup" placeholder="예: ○○아파트 정문" /></label>
+      <label>하원 장소 (선택)<input name="shuttle_dropoff" placeholder="예: ○○아파트 정문" /></label>
     </div>
     <label>메모<textarea name="notes" rows="3"></textarea></label>
     <fieldset class="consent">
@@ -251,8 +251,10 @@ f.addEventListener('submit', async (e) => {
   if (!f.name.value.trim()) return fail('학생 이름을 입력해주세요.')
   if (!f.birth_date.value) return fail('생년월일을 입력해주세요.')
   if (!f.grade.value) return fail('학년을 선택해주세요.')
+  if (!f.school.value.trim()) return fail('학교를 입력해주세요.')
   if (!f.guardian_phone.value.trim()) return fail('보호자 연락처를 입력해주세요.')
-  if (usesShuttle() && (!f.shuttle_pickup.value.trim() || !f.shuttle_dropoff.value.trim())) return fail('차량 탑승 시 탑승 장소와 하원 장소를 입력해주세요.')
+  if (!f.address.value.trim()) return fail('주소를 입력해주세요.')
+  if (!f.referral_source.value) return fail('유입 경로를 선택해주세요.')
   if (!f.privacy_consent.checked) return fail('개인정보 수집·이용 동의는 필수입니다.')
   if (under14 && !f.guardian_consent.checked) return fail('만 14세 미만은 법정대리인(보호자) 동의가 필수입니다.')
   const payload = {
@@ -272,9 +274,15 @@ f.addEventListener('submit', async (e) => {
   // Notion 동기화 (Edge Function). 실패해도 등록 자체는 성공 처리.
   try { await supabase.functions.invoke('notion-sync', { body: data }) } catch(e){ console.warn('Notion 동기화 실패', e) }
   btn.disabled=false; btn.textContent='등록하기'
-  msg.className='status-success'; msg.textContent='등록이 완료되었습니다!'
   resetForm()
-  if (adminMode){ adminMode=false; document.getElementById('regTitle').textContent='신입생 등록'; showManagerList() }
+  if (adminMode){
+    adminMode=false; document.getElementById('regTitle').textContent='신입생 등록'
+    alert('정상적으로 학생 등록을 완료했습니다.')
+    showManagerList()
+  } else {
+    alert('정상적으로 학생 등록을 완료했습니다.')
+    show('home')
+  }
 })
 function fail(t){ msg.className='status-error'; msg.textContent=t }
 
