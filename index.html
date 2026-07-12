@@ -73,6 +73,8 @@
   .toolbar button{padding:10px 16px;border:none;border-radius:8px;background:var(--green);color:#fff;font-weight:700;cursor:pointer;}
   .toolbar .add-btn{background:var(--red);}
   .toolbar .add-btn:hover{background:var(--red-dark);}
+  .del-btn{padding:6px 12px;border:none;border-radius:6px;background:var(--red);color:#fff;font-weight:600;font-size:.82rem;cursor:pointer;}
+  .del-btn:hover{background:var(--red-dark);}
   .toolbar button:hover{background:var(--green-dark);}
   .table-scroll{overflow-x:auto;}
   table{width:100%;border-collapse:collapse;font-size:.9rem;white-space:nowrap;}
@@ -198,7 +200,7 @@
     <table>
       <thead><tr>
         <th>이름</th><th>생년월일</th><th>학교</th><th>학년</th><th>본인 연락처</th><th>보호자 연락처</th>
-        <th>주소</th><th>차량</th><th>탑승 장소</th><th>하원 장소</th><th>메모</th><th>유입경로</th><th>마케팅</th><th>등록일</th>
+        <th>주소</th><th>차량</th><th>탑승 장소</th><th>하원 장소</th><th>메모</th><th>유입경로</th><th>마케팅</th><th>등록일</th><th>관리</th>
       </tr></thead>
       <tbody id="tbody"></tbody>
     </table>
@@ -304,15 +306,24 @@ function render(){
   const q = document.getElementById('search').value.toLowerCase()
   const rows = allStudents.filter(s => [s.name,s.phone,s.guardian_phone,s.school,s.grade].some(v => (v||'').toLowerCase().includes(q)))
   const tb = document.getElementById('tbody')
-  if (!rows.length){ tb.innerHTML = '<tr><td colspan="14" style="text-align:center">등록된 데이터가 없습니다.</td></tr>'; return }
+  if (!rows.length){ tb.innerHTML = '<tr><td colspan="15" style="text-align:center">등록된 데이터가 없습니다.</td></tr>'; return }
   tb.innerHTML = rows.map(s => `<tr>
     <td>${esc(s.name)}</td><td>${s.birth_date||'-'}</td><td>${esc(s.school)||'-'}</td><td>${esc(s.grade)||'-'}</td>
     <td>${esc(s.phone)||'-'}</td><td>${esc(s.guardian_phone)||'-'}</td><td>${esc(s.address)||'-'}</td>
     <td>${s.uses_shuttle?'이용':'미이용'}</td><td>${esc(s.shuttle_pickup)||'-'}</td><td>${esc(s.shuttle_dropoff)||'-'}</td>
     <td>${esc(s.notes)||'-'}</td><td>${esc(s.referral_source)||'-'}</td><td>${s.marketing_consent?'동의':'-'}</td>
-    <td>${new Date(s.created_at).toLocaleDateString('ko-KR')}</td></tr>`).join('')
+    <td>${new Date(s.created_at).toLocaleDateString('ko-KR')}</td>
+    <td><button class="del-btn" onclick="deleteStudent('${s.id}')">삭제</button></td></tr>`).join('')
 }
 function esc(v){ return (v==null?'':String(v)).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])) }
+window.deleteStudent = async (id) => {
+  const stu = allStudents.find(x => x.id === id)
+  const name = stu ? stu.name : ''
+  if (!confirm(`'${name}' 학생의 등록 정보를 삭제할까요?\n삭제하면 되돌릴 수 없습니다. (노션 기록은 자동 삭제되지 않습니다)`)) return
+  const { error } = await supabase.from('students').delete().eq('id', id)
+  if (error){ alert('삭제 실패: ' + error.message); return }
+  loadStudents()
+}
 document.getElementById('search').addEventListener('input', render)
 </script>
 </body>
